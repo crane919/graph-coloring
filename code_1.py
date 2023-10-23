@@ -12,7 +12,9 @@ def addEdge(edge_list, vertex_1, vertex_2):
 
     return edge_list #returns the entire edge list
 
-def greedy(edge_list):
+def greedy(edge_list, display_time):
+    if display_time: 
+        print("Beginning Greedy Algorithm.")
     start_time = time.time()  # Note the start time
     colors = [-1] * len(edge_list)  # Array to hold the colors for each vertex
     available_colors = [False] * len(edge_list)  # Array to hold which colors are available for that vertex
@@ -36,10 +38,11 @@ def greedy(edge_list):
         available_colors = [False] * len(edge_list)  # Reset available colors for the next loop
 
     end_time = time.time()  # Note the end time
-
     color_dict = {str(vertex): color for vertex, color in enumerate(colors)}
     run_time = end_time - start_time
-    return color_dict, run_time
+    if display_time:
+        print(f"Finished Greedy Algorithm. Runtime: {run_time}")
+    return color_dict
 
 def isValidColoring(edge_list, vertex_colors):
     for vertex in range(len(edge_list)):
@@ -92,7 +95,7 @@ def generate_random_graph(num_vertices, num_edges):
     
     return edge_list
 
-def visualize_graphs(edge_list, greedy_colors, greedy_runtime, brute_force_colors, brute_force_runtime):
+def visualize_graphs(edge_list, coloring_1_name, colors_1, coloring_2_name, colors_2, coloring_3_name, colors_3):
     G = nx.Graph()
     edges_as_tuples = [(i, neighbor) for i, neighbors in enumerate(edge_list) for neighbor in neighbors]
     G.add_edges_from(edges_as_tuples)
@@ -109,42 +112,65 @@ def visualize_graphs(edge_list, greedy_colors, greedy_runtime, brute_force_color
     '#cd9575', '#665d1e', '#915c83', '#841b2d', '#faebd7'   # antique brass, golden brown, plum, ruby, antique white
     ]  
 
-    if brute_force_colors:  # If brute force results are provided
-        max_colors = max(max(brute_force_colors.values()), max(greedy_colors.values())) + 1
-
-        brute_force_node_colors = [color_palette_50[brute_force_colors.get(str(node), -1)] for node in G.nodes()]
+    #determine how many graphs were given and adjust appropriately
+    if colors_1 and colors_2 and colors_3:
+        max_colors = max(max(colors_1.values()), max(colors_2.values()), max(colors_3.values())) + 1
+        colors_1 = [color_palette_50[colors_1.get(str(node), -1)] for node in G.nodes()]
+        colors_2 = [color_palette_50[colors_2.get(str(node), -1)] for node in G.nodes()]
+        colors_3 = [color_palette_50[colors_2.get(str(node), -1)] for node in G.nodes()]
+    elif colors_1 and colors_2:
+        max_colors = max(max(colors_1.values()), max(colors_2.values())) + 1
+        colors_1 = [color_palette_50[colors_1.get(str(node), -1)] for node in G.nodes()]
+        colors_2 = [color_palette_50[colors_2.get(str(node), -1)] for node in G.nodes()]
+    elif colors_1:
+        max_colors = max(colors_1.values()) + 1
+        colors_1 = [color_palette_50[colors_1.get(str(node), -1)] for node in G.nodes()]
     else:
-        max_colors = max(greedy_colors.values()) + 1
+        raise ValueError("Please put in a value for colors_1 ONLY, colors_1 and colors_2 ONLY, or all three. Other combinations not excepted.")
+
 
     if len(color_palette_50) < max_colors:
         raise ValueError("The graph requires more colors than the provided color palette can offer.")
     
-    greedy_node_colors = [color_palette_50[greedy_colors.get(str(node), -1)] for node in G.nodes()]
-
     pos = nx.spring_layout(G)
 
-    # Visualization
     plt.figure(figsize=(15, 7))
 
-    plt.subplot(1, 2, 1)
-    nx.draw(G, pos=pos, with_labels=True, node_color=greedy_node_colors, node_size=700, font_weight='bold')
-    plt.title(f'Greedy Coloring ({len(set(greedy_node_colors))} colors, {greedy_runtime:.6f} runtime)')
-
-    if brute_force_colors != None:
+    #determine how many graphs were given and adjust appropriately
+    if colors_2 and colors_3:
+        plt.subplot(1, 3, 1)
+        nx.draw(G, pos=pos, with_labels=True, node_color=colors_1, node_size=700, font_weight='bold')
+        plt.title(f'{coloring_1_name} ({len(set(colors_1))} colors)')
+        plt.subplot(1, 3, 2)
+        nx.draw(G, pos=pos, with_labels=True, node_color=colors_2, node_size=700, font_weight='bold')
+        plt.title(f'{coloring_2_name} ({len(set(colors_2))} colors)')
+        plt.subplot(1, 3, 3)
+        nx.draw(G, pos=pos, with_labels=True, node_color=colors_3, node_size=700, font_weight='bold')
+        plt.title(f'{coloring_3_name} ({len(set(colors_3))} colors)')
+    elif colors_2:
+        plt.subplot(1, 2, 1)
+        nx.draw(G, pos=pos, with_labels=True, node_color=colors_1, node_size=700, font_weight='bold')
+        plt.title(f'{coloring_1_name} ({len(set(colors_1))} colors)')
         plt.subplot(1, 2, 2)
-        nx.draw(G, pos=pos, with_labels=True, node_color=brute_force_node_colors, node_size=700, font_weight='bold')
-        plt.title(f'Brute Force Coloring ({len(set(brute_force_node_colors))} colors, {brute_force_runtime:.6f} runtime)')
-
+        nx.draw(G, pos=pos, with_labels=True, node_color=colors_2, node_size=700, font_weight='bold')
+        plt.title(f'{coloring_2_name} ({len(set(colors_2))} colors)')
+    else:
+        plt.subplot(1, 1, 1)
+        nx.draw(G, pos=pos, with_labels=True, node_color=colors_1, node_size=700, font_weight='bold')
+        plt.title(f'{coloring_1_name} ({len(set(colors_1))} colors)')
+    
     plt.tight_layout()
     plt.show()
 
-def save_graph_data(edge_list, greedy_colors, greedy_runtime, brute_force_colors, brute_force_runtime):
+def save_graph_data(edge_list, coloring_1_name, colors_1, coloring_2_name, colors_2, coloring_3_name, colors_3):
     graph_data = {
         "edge_list": edge_list,
-        "greedy_colors": greedy_colors,
-        "greedy_runtime": greedy_runtime,
-        "brute_force_colors": brute_force_colors,
-        "brute_force_runtime": brute_force_runtime
+        "coloring_1_name": coloring_1_name,
+        "colors_1": colors_1,
+        "coloring_2_name": coloring_2_name,
+        "colors_2": colors_2,
+        "coloring_3_name": coloring_3_name,
+        "colors_3": colors_3,
     }
 
     filename = 'graph_data.json'
@@ -163,35 +189,36 @@ def save_graph_data(edge_list, greedy_colors, greedy_runtime, brute_force_colors
         json.dump(data, f, indent=4)
 
 def run_brute_force(edge_list, q):
-        colors, runtime = bruteForce(edge_list)
-        q.put((colors, runtime))
+        colors, run_time = bruteForce(edge_list)
+        q.put((colors, run_time))
 
-def create_and_save(edge_list):
+def brute_vs_greedy_with_timeout(edge_list):
     q = multiprocessing.Queue()
     brute_force_process = multiprocessing.Process(target=run_brute_force, args=(edge_list, q))
-    
     # Start the process and wait for it to finish with a timeout of 30 seconds
     brute_force_process.start()
+    print("Beginning Brute Force Algorithm")
     brute_force_process.join(timeout=60)
     
     # If the process completed within the timeout, retrieve the results
     if not q.empty():
         brute_force_colors, brute_force_runtime = q.get()
+        print(f"Finished Brute Force Algorithm. Runtime: {brute_force_runtime}")
     else:
         # If the process didn't complete within the timeout, terminate it and run the greedy algorithm
         print("Brute force runtime exceeds 60 seconds. Proceeding with only the greedy algorithm.")
         brute_force_process.terminate()  # Ensure the process is terminated
-        brute_force_colors, brute_force_runtime = None, None
+        brute_force_colors = None
     
     # Run the greedy algorithm
-    greedy_colors, greedy_runtime = greedy(edge_list)
+    greedy_colors = greedy(edge_list, True)
     
-    visualize_graphs(edge_list, greedy_colors, greedy_runtime, brute_force_colors, brute_force_runtime)
-    save_graph_data(edge_list, greedy_colors, greedy_runtime, brute_force_colors, brute_force_runtime)
+    visualize_graphs(edge_list, "Greedy", greedy_colors, "Brute Force", brute_force_colors, None, None)
+    save_graph_data(edge_list, "Greedy", greedy_colors, "Brute Force", brute_force_colors, None, None)
 
-def see_past_graphs():
+def see_all_past_graphs():
     with open("graph_data.json", 'r') as f:
         data = json.load(f)
 
     for graph_data in data:
-        visualize_graphs(graph_data["edge_list"], graph_data["greedy_colors"], graph_data["greedy_runtime"], graph_data["brute_force_colors"], graph_data["brute_force_runtime"])
+        visualize_graphs(graph_data["edge_list"], graph_data["coloring_1_name"], graph_data["colors_1"], graph_data["coloring_2_name"], graph_data["colors_2"], graph_data["coloring_3_name"], graph_data["colors_3"]) 
