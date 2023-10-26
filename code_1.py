@@ -14,9 +14,7 @@ def addEdge(edge_list, vertex_1, vertex_2):
     return edge_list  # returns the entire edge list
 
 
-def greedy(edge_list, display_time):
-    if display_time:
-        print("Beginning Greedy Algorithm.")
+def greedy(edge_list):
     start_time = time.time()  # Note the start time
     colors = [-1] * len(edge_list)  # Array to hold the colors for each vertex
     available_colors = [False] * len(
@@ -52,9 +50,7 @@ def greedy(edge_list, display_time):
     end_time = time.time()  # Note the end time
     color_dict = {str(vertex): color for vertex, color in enumerate(colors)}
     run_time = end_time - start_time
-    if display_time:
-        print(f"Finished Greedy Algorithm. Runtime: {run_time}")
-    return color_dict
+    return color_dict, run_time
 
 
 def welsh_powell(edge_list):
@@ -62,7 +58,8 @@ def welsh_powell(edge_list):
         edge_list, key=lambda l: (len(l), l)
     )  # sorts from lowest to highest degree
     welsh_powell_sorted_list.reverse()  # sorts from highest to lowest degree
-    return greedy(welsh_powell_sorted_list, False)
+    colors, runtime = greedy(welsh_powell_sorted_list)
+    return colors, runtime
 
 
 def isValidColoring(edge_list, vertex_colors):
@@ -131,10 +128,10 @@ def visualize_graphs(
     edge_list,
     coloring_1_name,
     colors_1,
-    coloring_2_name,
-    colors_2,
-    coloring_3_name,
-    colors_3,
+    coloring_2_name=None,
+    colors_2=None,
+    coloring_3_name=None,
+    colors_3=None
 ):
     G = nx.Graph()
     edges_as_tuples = [
@@ -352,16 +349,16 @@ def brute_vs_greedy_with_timeout(edge_list):
         brute_force_colors = None
 
     # Run the greedy algorithm
-    greedy_colors = greedy(edge_list, True)
+    print(f"Beginning Greedy Algorithm")
+    greedy_colors, greedy_runtime = greedy(edge_list)
+    print(f"Finished Greedy Algorithm. Runtime: {greedy_runtime}")
 
     visualize_graphs(
         edge_list,
         "Greedy",
         greedy_colors,
         "Brute Force",
-        brute_force_colors,
-        None,
-        None,
+        brute_force_colors
     )
     save_graph_data(
         edge_list,
@@ -372,141 +369,6 @@ def brute_vs_greedy_with_timeout(edge_list):
         None,
         None,
     )
-
-
-def visualize_greedy_vs_welsh_powell(edge_list, greedy_coloring, welsh_powell_coloring):
-    G = nx.Graph()
-    edges_as_tuples = [
-        (i, neighbor) for i, neighbors in enumerate(edge_list) for neighbor in neighbors
-    ]
-    G.add_edges_from(edges_as_tuples)
-
-    color_palette_50 = [
-        "#e6194b",
-        "#3cb44b",
-        "#ffe119",
-        "#4363d8",
-        "#f58231",  # red, green, yellow, blue, orange
-        "#911eb4",
-        "#46f0f0",
-        "#f032e6",
-        "#bcf60c",
-        "#fabebe",  # purple, cyan, magenta, lime, pink
-        "#008080",
-        "#e6beff",
-        "#9a6324",
-        "#fffac8",
-        "#800000",  # teal, lavender, brown, beige, maroon
-        "#aaffc3",
-        "#808000",
-        "#ffd8b1",
-        "#000075",
-        "#808080",  # light green, olive, peach, navy, gray
-        "#ffffff",
-        "#000000",
-        "#0a74da",
-        "#6f2da8",
-        "#008000",  # white, black, bright blue, indigo, dark green
-        "#e0e0e0",
-        "#d1e231",
-        "#fabea7",
-        "#ff7f00",
-        "#ff0033",  # light gray, lime green, light peach, bright orange, bright red
-        "#a1ca6d",
-        "#673770",
-        "#c1a1d3",
-        "#d1e8e2",
-        "#f9c1a2",  # olive green, dark purple, light purple, light cyan, light orange
-        "#0d98ba",
-        "#ffdb58",
-        "#00468b",
-        "#ff6fff",
-        "#a4c639",  # turquoise, gold, dark blue, hot pink, green-yellow
-        "#cd9575",
-        "#665d1e",
-        "#915c83",
-        "#841b2d",
-        "#faebd7",  # antique brass, golden brown, plum, ruby, antique white
-    ]
-
-    max_colors = (
-        max(max(greedy_coloring.values()), max(welsh_powell_coloring.values())) + 1
-    )
-
-    if len(color_palette_50) < max_colors:
-        raise ValueError(
-            "The graph requires more colors than the provided color palette can offer."
-        )
-
-    greedy_node_colors = [
-        color_palette_50[greedy_coloring.get(str(node), -1)] for node in G.nodes()
-    ]
-    welsh_powell_nodes_coloring = [
-        color_palette_50[welsh_powell_coloring.get(str(node), -1)] for node in G.nodes()
-    ]
-
-    pos = nx.spring_layout(G)
-    plt.figure(figsize=(15, 7))
-
-    plt.subplot(1, 2, 1)
-    nx.draw(
-        G,
-        pos=pos,
-        with_labels=True,
-        node_color=greedy_node_colors,
-        node_size=700,
-        font_weight="bold",
-    )
-    plt.title(f"Normal Greedy Coloring ({len(set(greedy_node_colors))} colors)")
-
-    plt.subplot(1, 2, 2)
-    nx.draw(
-        G,
-        pos=pos,
-        with_labels=True,
-        node_color=welsh_powell_nodes_coloring,
-        node_size=700,
-        font_weight="bold",
-    )
-    plt.title(f"Welsh Powell Coloring ({len(set(welsh_powell_nodes_coloring))} colors)")
-
-    plt.tight_layout()
-    plt.show()
-
-
-def generate_random_graph(num_vertices, num_edges):
-    # Maximum possible edges for v vertices
-    max_edges = num_vertices * (num_vertices - 1) // 2
-
-    if num_edges > max_edges:
-        raise ValueError(
-            f"Cannot form {num_edges} edges with only {num_vertices} vertices. Maximum possible edges are {max_edges}."
-        )
-
-    edge_list = [[] for _ in range(num_vertices)]
-    num_edges_in_list = 0
-
-    while num_edges_in_list < num_edges:
-        vertex1 = random.randint(0, num_vertices - 1)
-        vertex2 = random.randint(0, num_vertices - 1)
-
-        # Ensure no self-loops and no duplicate edges
-        if (
-            vertex1 != vertex2
-            and vertex1 not in edge_list[vertex2]
-            and vertex2 not in edge_list[vertex1]
-        ):
-            addEdge(edge_list, vertex1, vertex2)
-            num_edges_in_list += 1
-
-    return edge_list
-
-
-graph = generate_random_graph(70, 200)  # feel free to change these values
-graph_greedy = greedy(graph, False)
-graph_welsh_powell = welsh_powell(graph)
-visualize_greedy_vs_welsh_powell(graph, graph_greedy, graph_welsh_powell)
-
 
 def see_all_past_graphs():
     with open("graph_data.json", "r") as f:
