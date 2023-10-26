@@ -54,13 +54,37 @@ def greedy(edge_list):
     return color_dict, run_time
 
 
+
 def welsh_powell(edge_list):
-    welsh_powell_sorted_list = sorted(
-        edge_list, key=lambda l: (len(l), l)
-    )  # sorts from lowest to highest degree
-    welsh_powell_sorted_list.reverse()  # sorts from highest to lowest degree
-    colors, runtime = greedy(welsh_powell_sorted_list)
-    return colors, runtime
+    """
+    Color a graph using the Welsh-Powell algorithm.
+
+    The Welsh-Powell algorithm colors the vertices of a graph such that no two
+    adjacent vertices have the same color. It sorts the vertices based on their
+    degrees in descending order and assigns colors accordingly.
+
+    Args:
+        edge_list: A list of lists representing the graph's edges.
+
+    Returns:
+        dict: A dictionary where keys are vertex indices and values are the
+        assigned colors
+    """
+    # sort vertices
+    indexed_dict = {index: sublist for index, sublist in enumerate(edge_list)}
+    start_time = time.time()  # Note the start time
+    sorted_dict = dict(sorted(indexed_dict.items(), key=lambda item: len(item[1]), reverse=True))
+
+    colors = [-1] * len(edge_list)  # Array to hold the colors for each vertex
+    for key in sorted_dict:
+        curr_index = key
+        colors[curr_index] = find_color(curr_index, edge_list, colors)
+
+    end_time = time.time()  # Note the end time
+    color_dict = {str(vertex): color for vertex, color in enumerate(colors)}
+    run_time = end_time - start_time
+    return color_dict, run_time 
+
 
 
 def isValidColoring(edge_list, vertex_colors):
