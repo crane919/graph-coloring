@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import random
 import json
 import multiprocessing
+import heapq
 
 
 def addEdge(edge_list, vertex_1, vertex_2):
@@ -195,7 +196,7 @@ def visualize_graphs(
         )
         colors_1 = [color_palette_50[colors_1.get(str(node), -1)] for node in G.nodes()]
         colors_2 = [color_palette_50[colors_2.get(str(node), -1)] for node in G.nodes()]
-        colors_3 = [color_palette_50[colors_2.get(str(node), -1)] for node in G.nodes()]
+        colors_3 = [color_palette_50[colors_3.get(str(node), -1)] for node in G.nodes()]
     elif colors_1 and colors_2:
         max_colors = max(max(colors_1.values()), max(colors_2.values())) + 1
         colors_1 = [color_palette_50[colors_1.get(str(node), -1)] for node in G.nodes()]
@@ -290,10 +291,10 @@ def save_graph_data(
     edge_list,
     coloring_1_name,
     colors_1,
-    coloring_2_name,
-    colors_2,
-    coloring_3_name,
-    colors_3,
+    coloring_2_name=None,
+    colors_2=None,
+    coloring_3_name=None,
+    colors_3=None,
 ):
     graph_data = {
         "edge_list": edge_list,
@@ -384,3 +385,94 @@ def see_all_past_graphs():
             graph_data["coloring_3_name"],
             graph_data["colors_3"],
         )
+
+import heapq
+
+def build_sat_list(edge_list):
+    """
+    Create a list of saturation values for all uncolored nodes.
+
+    The saturation list is stored and ordered as a max heap. The structure of a max heap allows
+        for easy searching of the highest saturation. heapq automatically defaults to using
+            min heaps, so a negative sign is stuck on top of all saturation values so that
+                the heap functions as a max heap.
+
+    Args:
+        edge_list: a list of lists that represent all of the nodes that a node is attached too.
+
+    Returns:
+        a list of lists that is a heap and contains the saturation value and index of each node. 
+    """
+    max_heap = []
+    for i,node in enumerate(edge_list):
+        heapq.heappush(max_heap, [-len(node),i])
+    return max_heap
+
+
+def find_color(node_index, edge_list, color_list):
+    """
+    Find the color that a selected node should be.
+
+    Colors are represented by an int. A color that hasn't been assigned yet is represented as a -1.
+
+    Args:
+        node_index: an int of the index of the current node
+        edge_list: a list of lists that represent all of the nodes that a node is attached too
+        color_list: a list of all of the current colors represented by an int
+
+    Returns:
+        a list of lists that is a heap and contains the saturation value and index of each node
+    """
+    nodes_to_check = edge_list[node_index]
+    taken_colors = [-1]
+    for node in nodes_to_check:
+        if color_list[node] not in taken_colors:
+            taken_colors += [color_list[node]]
+    for color in range(len(taken_colors)):
+        if color not in taken_colors:
+            return color
+    return len(taken_colors) +1 
+
+
+def update_sat(node_index, sat_list, edge_list):
+    """
+    Update the saturation list to reflect a newly colored node.
+
+    Args:
+        node_index: an int of the index of the current node.
+        edge_list: a list of lists that represent all of the nodes that a node is attached too.
+        sat_list: a list of lists that is a heap and contains the saturation value and index of each node.
+
+    Returns:
+        a list of lists that is a heap and contains the saturation value and index of each node.
+    """
+    nodes_to_check = edge_list[node_index]
+    for i,node in enumerate(sat_list):
+        if node[1] in nodes_to_check:
+            sat_list[i][0] += 1
+    return sat_list
+
+def DSatur(edge_list):
+    """
+    Color a graph using the DSatur algorithm.
+
+    Args:
+        edge_list: a list of lists that represent all of the nodes that a node is attached too.
+
+    Returns:
+        a list of colors for each node (colors are represented by ints). 
+    """    
+    start_time = time.time()  # Note the start time
+    sat_list = build_sat_list(edge_list)
+    color_list = [-1] * len(edge_list)
+    while len(sat_list)>0:
+        curr_node = heapq.heappop(sat_list)
+        curr_node_index = curr_node[1]
+        color_list[curr_node_index] = find_color(curr_node_index,edge_list,color_list)
+        sat_list = update_sat(curr_node_index, sat_list, edge_list)
+    end_time = time.time()  # Note the end time
+    color_dict = {str(vertex): color for vertex, color in enumerate(color_list)}
+    run_time = end_time - start_time
+    return color_dict, run_time
+
+        
